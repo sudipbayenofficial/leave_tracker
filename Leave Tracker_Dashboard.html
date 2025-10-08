@@ -1,0 +1,694 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Leave Tracker</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    :root{
+      --bg: #f6f7fb;
+      --card: #ffffff;
+      --text: #222;
+      --muted: #666;
+      --accent: #2b6ef6;
+      --success: #0a7a3f;
+      --danger: #b21b1b;
+      --warning: #b08a00;
+      --border: #d6dbe8;
+      --shadow: 0 2px 8px rgba(0,0,0,0.06);
+      --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      transition: color 0.2s, background 0.2s;
+    }
+    .dark{
+      --bg: #111217;
+      --card: #0f1720;
+      --text: #e6eef8;
+      --muted: #a3b0c4;
+      --accent: #6ea1ff;
+      --success: #2dd4bf;
+      --danger: #f87171;
+      --warning: #fbbf24;
+      --border: #374151;
+      --shadow: 0 2px 8px rgba(0,0,0,0.2);
+    }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    body{
+      font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+      background: var(--bg);
+      color: var(--text);
+      margin:0;
+      padding:20px;
+      opacity: 0;
+      animation: fadeIn 0.5s ease-in-out forwards;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+    .container{ max-width:1400px; margin:0 auto; }
+    header{ display:flex; justify-content:space-between; align-items:center; gap:12px; margin-bottom:20px; }
+    h1{ margin:0; font-size:22px; font-weight:600; }
+    .card{
+      background:var(--card);
+      padding:20px;
+      border-radius:12px;
+      box-shadow: var(--shadow);
+      margin-bottom:20px;
+      transition: var(--transition);
+      transform: translateY(0);
+      opacity: 1;
+      animation: slideUp 0.4s ease-out forwards;
+    }
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .grid{ display:grid; grid-template-columns: 1fr 380px; gap:20px; align-items:start; }
+    .full-width{ grid-column:1/-1; }
+    label{ display:block; font-size:13px; color:var(--muted); margin-bottom:6px; font-weight:500; transition: var(--transition); }
+    input[type="text"], select, textarea, .inline-input {
+      width:100%; padding:10px 12px; border-radius:8px; border:1px solid var(--border);
+      background:transparent; color:var(--text); font-size:14px; transition: var(--transition);
+    }
+    input[type="text"]:focus, select:focus, textarea:focus {
+      outline:0; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(43, 110, 246, 0.1);
+    }
+    .inline-row{ display:flex; gap:10px; }
+    .inline-row > *{ flex:1; }
+    button{
+      background:var(--accent); color:white; border:0; padding:10px 14px; border-radius:8px;
+      cursor:pointer; font-weight:500; transition: var(--transition); transform: translateY(0);
+    }
+    button:hover{ transform: translateY(-2px); box-shadow: 0 4px 12px rgba(43, 110, 246, 0.3); }
+    button:active{ transform: translateY(0); }
+    button.ghost{ background:transparent; border:1px solid var(--border); color:var(--text); }
+    button.success{ background:var(--success); }
+    button.danger{ background:var(--danger); }
+    button.warning{ background:var(--warning); color:#000; }
+    table{ width:100%; border-collapse:collapse; font-size:14px; }
+    th{ text-align:left; padding:12px; border-bottom:1px solid var(--border); font-weight:600; }
+    td{ text-align:left; padding:12px; border-bottom:1px solid var(--border); transition: var(--transition); }
+    tr{ transition: var(--transition); }
+    tr:hover{ background:rgba(0,0,0,0.02); transform: scale(1.005); }
+    .small { font-size:12px; color:var(--muted); }
+    .status {
+      padding:6px 10px; border-radius:16px; font-size:12px; display:inline-block;
+      font-weight:500; transition: var(--transition);
+    }
+    .status.pending{ background:#fffbeb; color:#b08a00; border:1px solid #f0e3b6; }
+    .status.approved{ background:#e6ffef; color:var(--success); border:1px solid #bfe7c8; }
+    .status.rejected{ background:#fff0f0; color:var(--danger); border:1px solid #f2b9b9; }
+    .controls{ display:flex; gap:10px; flex-wrap:wrap; }
+    .muted { color:var(--muted); font-size:13px; }
+    .footer-row{ display:flex; justify-content:space-between; align-items:center; gap:8px; margin-top:12px; }
+    .upload-input{ display:none; }
+    .upcoming-list{ max-height:240px; overflow:auto; }
+    .dark-toggle{ display:flex; align-items:center; gap:8px; }
+    .actions{ display:flex; gap:6px; }
+    .actions button{ padding:6px 10px; font-size:12px; transition: var(--transition); }
+    .actions button:hover{ transform: translateY(-1px); }
+    .section-title{ font-size:18px; margin-top:0; margin-bottom:12px; display:flex; justify-content:space-between; align-items:center; }
+    .section-title .badge{
+      background:var(--accent); color:white; padding:4px 8px; border-radius:12px;
+      font-size:12px; transition: var(--transition);
+    }
+    .upcoming-item{
+      padding:12px; border-bottom:1px solid var(--border); transition: var(--transition);
+      opacity: 0; animation: fadeIn 0.3s ease-out forwards;
+    }
+    @keyframes fadeInItem {
+      from { opacity: 0; transform: translateX(-10px); }
+      to { opacity: 1; transform: translateX(0); }
+    }
+    .upcoming-item:nth-child(1) { animation-delay: 0.1s; }
+    .upcoming-item:nth-child(2) { animation-delay: 0.2s; }
+    .upcoming-item:nth-child(3) { animation-delay: 0.3s; }
+    .upcoming-item:nth-child(4) { animation-delay: 0.4s; }
+    .upcoming-item:nth-child(5) { animation-delay: 0.5s; }
+    .upcoming-header{ display:flex; justify-content:space-between; align-items:center; margin-bottom:4px; }
+    .upcoming-meta{ color:var(--muted); font-size:12px; }
+    .flatpickr-input{ padding:10px 12px; transition: var(--transition); }
+    .flatpickr-calendar{ background:var(--card); border-color:var(--border); }
+    .flatpickr-day.selected{ background:var(--accent); }
+    .flatpickr-day:hover{ background:rgba(43, 110, 246, 0.1); }
+    .dark .flatpickr-day.selected{ background:var(--accent); }
+    @media (max-width: 992px) {
+      .grid{ grid-template-columns: 1fr; }
+    }
+    /* Animation Classes */
+    .fade-in { animation: fadeIn 0.3s ease-out forwards; }
+    .slide-up { animation: slideUp 0.3s ease-out forwards; }
+    /* Theme transition */
+    .theme-transition {
+      transition: background 0.4s ease, color 0.4s ease, border-color 0.4s ease, box-shadow 0.4s ease;
+    }
+  </style>
+</head>
+<body>
+  <div class="container" id="app">
+    <header class="slide-up">
+      <div>
+        <h1><i class="fas fa-calendar-check"></i> Leave Tracker</h1>
+        <div class="muted">Tracks leaves, approvals, and upcoming leaves (next 7 days)</div>
+      </div>
+      <div style="display:flex; gap:10px; align-items:center;">
+        <div class="dark-toggle">
+          <label class="small">Dark Mode</label>
+          <input type="checkbox" id="themeToggle">
+        </div>
+        <div class="controls">
+          <button id="exportLeavesBtn" title="Export Leaves to CSV" class="slide-up"><i class="fas fa-file-export"></i> Export Leaves</button>
+          <button id="exportEmpBtn" title="Export Employees CSV" class="ghost slide-up"><i class="fas fa-file-export"></i> Export Employees</button>
+        </div>
+      </div>
+    </header>
+    <div class="grid">
+      <div>
+        <div class="card">
+          <h3 class="section-title">
+            Schedule a leave
+            <span class="badge" id="leavesCount">0</span>
+          </h3>
+          <div style="margin-bottom:16px;">
+            <label for="employeeSelect">Employee ID</label>
+            <select id="employeeSelect" class="fade-in">
+              <option value="">-- Select Employee ID --</option>
+            </select>
+          </div>
+          <div style="margin-bottom:16px;">
+            <label for="employeeName">Employee Name</label>
+            <input type="text" id="employeeName" placeholder="Auto-filled" readonly class="fade-in">
+          </div>
+          <div style="margin-bottom:16px;">
+            <label for="leaveType">Leave Type</label>
+            <select id="leaveType" class="fade-in">
+              <option value="Casual Leave">Casual Leave</option>
+              <option value="Sick Leave">Sick Leave</option>
+              <option value="Paid Leave">Paid Leave</option>
+              <option value="Unpaid Leave">Unpaid Leave</option>
+              <option value="Work From Home">Work From Home</option>
+            </select>
+          </div>
+          <div style="margin-bottom:16px;">
+            <label>Date Range (mm/dd/yyyy)</label>
+            <div class="inline-row">
+              <input type="text" id="fromDate" placeholder="From date" class="fade-in">
+              <input type="text" id="toDate" placeholder="To date" class="fade-in">
+            </div>
+          </div>
+          <div style="margin-bottom:16px;">
+            <label>Total Working Days (excl Sat & Sun)</label>
+            <input type="text" id="totalDays" readonly class="fade-in">
+          </div>
+          <div style="margin-bottom:16px;">
+            <label for="reason">Reason</label>
+            <textarea id="reason" rows="3" placeholder="Enter leave reason" class="fade-in"></textarea>
+          </div>
+          <div style="display:flex; gap:10px; align-items:center;">
+            <button id="addLeaveBtn" class="fade-in"><i class="fas fa-plus"></i> Add Leave (Pending)</button>
+            <button id="clearBtn" class="ghost fade-in"><i class="fas fa-times"></i> Clear</button>
+          </div>
+          <hr style="margin:16px 0; border:0; border-top:1px solid var(--border);">
+          <div style="display:flex; gap:10px; align-items:center; margin-bottom:8px;">
+            <label class="small" style="margin:0;">Import Employees (.xlsx)</label>
+            <input type="file" id="empFile" accept=".xlsx,.xls" class="upload-input">
+            <button id="importEmpBtn" class="ghost fade-in"><i class="fas fa-file-import"></i> Choose & Import</button>
+            <div class="small muted">Expected columns: Name | SK ID</div>
+          </div>
+        </div>
+        <div class="card full-width">
+          <h3 class="section-title">
+            All Leaves
+            <span class="badge" id="leavesCount2">0</span>
+          </h3>
+          <div id="leavesTableWrap">
+            <table id="leavesTable">
+              <thead>
+                <tr>
+                  <th>SK ID</th>
+                  <th>Name</th>
+                  <th>Leave Type</th>
+                  <th>From</th>
+                  <th>To</th>
+                  <th>Days</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+            <div id="noLeaves" class="muted" style="padding:20px 0; text-align:center; opacity: 0; animation: fadeIn 0.5s ease-out forwards;">No leaves recorded.</div>
+          </div>
+        </div>
+      </div>
+      <aside>
+        <div class="card">
+          <h3 class="section-title">
+            Dashboard
+            <span class="badge" id="upcomingCount">0</span>
+          </h3>
+          <div class="muted" style="margin-bottom:12px; font-size:12px;">Upcoming leaves (next 7 days)</div>
+          <div class="upcoming-list" id="upcomingList">
+            <!-- items -->
+          </div>
+          <div class="footer-row">
+            <div class="small muted">Today: <span id="todayLabel"></span></div>
+            <div class="small muted">Range: next 7 days</div>
+          </div>
+        </div>
+        <div class="card">
+          <h3 class="section-title">Actions</h3>
+          <div style="display:flex; gap:10px; flex-direction:column;">
+            <button id="clearAllBtn" class="ghost danger fade-in"><i class="fas fa-trash"></i> Clear All Leaves</button>
+            <button id="clearEmpBtn" class="ghost warning fade-in"><i class="fas fa-user-slash"></i> Clear Employees</button>
+          </div>
+        </div>
+      </aside>
+    </div>
+  </div>
+  <!-- Libraries -->
+  <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+  <script>
+    // Utilities
+    const qs = sel => document.querySelector(sel);
+    const qsa = sel => document.querySelectorAll(sel);
+    // Data keys
+    const EMP_KEY = 'lt_employees_v1';
+    const LEAVE_KEY = 'lt_leaves_v1';
+    // Elements
+    const employeeSelect = qs('#employeeSelect');
+    const employeeName = qs('#employeeName');
+    const fromDateEl = qs('#fromDate');
+    const toDateEl = qs('#toDate');
+    const totalDaysEl = qs('#totalDays');
+    const addLeaveBtn = qs('#addLeaveBtn');
+    const reasonEl = qs('#reason');
+    const leaveTypeEl = qs('#leaveType');
+    const leavesTableBody = qs('#leavesTable tbody');
+    const noLeaves = qs('#noLeaves');
+    const upcomingList = qs('#upcomingList');
+    const todayLabel = qs('#todayLabel');
+    const importEmpBtn = qs('#importEmpBtn');
+    const empFileInput = qs('#empFile');
+    const exportLeavesBtn = qs('#exportLeavesBtn');
+    const exportEmpBtn = qs('#exportEmpBtn');
+    const clearAllBtn = qs('#clearAllBtn');
+    const clearEmpBtn = qs('#clearEmpBtn');
+    const themeToggle = qs('#themeToggle');
+    const clearBtn = qs('#clearBtn');
+    const leavesCount = qs('#leavesCount');
+    const leavesCount2 = qs('#leavesCount2');
+    const upcomingCount = qs('#upcomingCount');
+    // Flatpickr with mm/dd/yyyy
+    flatpickr(fromDateEl, { dateFormat: "m/d/Y", onChange: updateDays });
+    flatpickr(toDateEl, { dateFormat: "m/d/Y", onChange: updateDays });
+    // State
+    let employees = loadData(EMP_KEY, []);
+    let leaves = loadData(LEAVE_KEY, []);
+    // Init
+    renderEmployeesSelect();
+    renderLeaves();
+    renderUpcoming();
+    todayLabel.textContent = formatDate(new Date());
+    // Theme initial
+    const isDark = localStorage.getItem('lt_dark') === '1';
+    setDarkMode(isDark);
+    themeToggle.checked = isDark;
+    themeToggle.addEventListener('change', (e)=> setDarkMode(e.target.checked));
+    // Employee select change -> populate name
+    employeeSelect.addEventListener('change', ()=>{
+      const id = employeeSelect.value;
+      const emp = employees.find(e => e.id === id);
+      employeeName.value = emp ? emp.name : '';
+    });
+    // Add Leave
+    addLeaveBtn.addEventListener('click', ()=>{
+      const empId = employeeSelect.value;
+      if(!empId){ alert('Select Employee ID first.'); return; }
+      const emp = employees.find(e => e.id === empId);
+      if(!emp){ alert('Employee not found.'); return; }
+      const from = parseDateStr(fromDateEl.value);
+      const to = parseDateStr(toDateEl.value);
+      if(!from || !to){ alert('Please select valid From and To dates.'); return; }
+      if(to < from){ alert('To date cannot be before From date.'); return; }
+      const days = countWorkingDays(from, to);
+      const leaveObj = {
+        id: 'L-' + Date.now(),
+        empId: empId,
+        name: emp.name,
+        type: leaveTypeEl.value,
+        from: formatDate(from),
+        to: formatDate(to),
+        fromISO: toISO(from),
+        toISO: toISO(to),
+        days: days,
+        reason: reasonEl.value || '',
+        status: 'Pending',
+        createdAt: Date.now()
+      };
+      leaves.push(leaveObj);
+      saveData(LEAVE_KEY, leaves);
+      renderLeaves();
+      renderUpcoming();
+      clearEntryForm();
+      // Animation feedback
+      addLeaveBtn.style.transform = 'scale(0.95)';
+      setTimeout(() => addLeaveBtn.style.transform = '', 200);
+    });
+    // Clear entry
+    clearBtn.addEventListener('click', clearEntryForm);
+    // Import employees
+    importEmpBtn.addEventListener('click', ()=> empFileInput.click());
+    empFileInput.addEventListener('change', handleEmpFile);
+    // Export CSVs
+    exportLeavesBtn.addEventListener('click', ()=> {
+      if(!leaves.length){ alert('No leaves to export.'); return; }
+      const rows = leaves.map(l => ({
+        'SK ID': l.empId,
+        'Name': l.name,
+        'Leave Type': l.type,
+        'From (mm/dd/yyyy)': l.from,
+        'To (mm/dd/yyyy)': l.to,
+        'Days': l.days,
+        'Status': l.status,
+        'Reason': l.reason
+      }));
+      downloadCSV(rows, 'leaves_export.csv');
+      exportLeavesBtn.style.transform = 'scale(0.95)';
+      setTimeout(() => exportLeavesBtn.style.transform = '', 200);
+    });
+    exportEmpBtn.addEventListener('click', ()=> {
+      if(!employees.length){ alert('No employees to export.'); return; }
+      const rows = employees.map(e => ({ 'Name': e.name, 'SK ID': e.id }));
+      downloadCSV(rows, 'employees_export.csv');
+      exportEmpBtn.style.transform = 'scale(0.95)';
+      setTimeout(() => exportEmpBtn.style.transform = '', 200);
+    });
+    // Clear all leaves
+    clearAllBtn.addEventListener('click', ()=>{
+      if(!confirm('Clear all leaves permanently?')) return;
+      leaves = [];
+      saveData(LEAVE_KEY, leaves);
+      renderLeaves();
+      renderUpcoming();
+      clearAllBtn.style.transform = 'scale(0.95)';
+      setTimeout(() => clearAllBtn.style.transform = '', 200);
+    });
+    clearEmpBtn.addEventListener('click', ()=>{
+      if(!confirm('Clear all employees permanently?')) return;
+      employees = [];
+      saveData(EMP_KEY, employees);
+      renderEmployeesSelect();
+      renderLeaves();
+      renderUpcoming();
+      clearEmpBtn.style.transform = 'scale(0.95)';
+      setTimeout(() => clearEmpBtn.style.transform = '', 200);
+    });
+    // Helper: load/save
+    function loadData(key, fallback){
+      try{
+        const raw = localStorage.getItem(key);
+        return raw ? JSON.parse(raw) : fallback;
+      }catch(e){
+        return fallback;
+      }
+    }
+    function saveData(key, data){
+      localStorage.setItem(key, JSON.stringify(data));
+    }
+    // Render employee select
+    function renderEmployeesSelect(){
+      // keep current selection if possible
+      const current = employeeSelect.value;
+      employeeSelect.innerHTML = '<option value="">-- Select Employee ID --</option>';
+      employees.forEach(emp=>{
+        const opt = document.createElement('option');
+        opt.value = emp.id;
+        opt.textContent = emp.id;
+        if(emp.id === current) opt.selected = true;
+        employeeSelect.appendChild(opt);
+      });
+      // if current selected, fill name
+      const sel = employeeSelect.value;
+      const emp = employees.find(e=>e.id===sel);
+      employeeName.value = emp ? emp.name : '';
+    }
+    // Render leaves table
+    function renderLeaves(){
+      leavesTableBody.innerHTML = '';
+      leavesCount.textContent = leaves.length;
+      leavesCount2.textContent = leaves.length;
+      if(!leaves.length){
+        qs('#leavesTable').style.display = 'none';
+        noLeaves.style.display = 'block';
+        return;
+      }
+      qs('#leavesTable').style.display = '';
+      noLeaves.style.display = 'none';
+      leaves.forEach(l=>{
+        const tr = document.createElement('tr');
+        tr.classList.add('fade-in');
+        const statusSpan = document.createElement('span');
+        statusSpan.textContent = l.status;
+        statusSpan.className = 'status ' + l.status.toLowerCase();
+        tr.innerHTML = `
+          <td>${escapeHtml(l.empId)}</td>
+          <td>${escapeHtml(l.name)}</td>
+          <td>${escapeHtml(l.type)}</td>
+          <td>${escapeHtml(l.from)}</td>
+          <td>${escapeHtml(l.to)}</td>
+          <td>${l.days}</td>
+          <td></td>
+          <td></td>
+        `;
+        tr.children[6].appendChild(statusSpan);
+        const actionsTd = tr.children[7];
+        const approveBtn = document.createElement('button');
+        approveBtn.textContent = 'Approve';
+        approveBtn.className = 'success';
+        approveBtn.addEventListener('click', ()=> {
+          updateLeaveStatus(l.id, 'Approved');
+          approveBtn.style.transform = 'scale(0.95)';
+          setTimeout(() => approveBtn.style.transform = '', 200);
+        });
+        const rejectBtn = document.createElement('button');
+        rejectBtn.textContent = 'Reject';
+        rejectBtn.className = 'danger';
+        rejectBtn.addEventListener('click', ()=> {
+          updateLeaveStatus(l.id, 'Rejected');
+          rejectBtn.style.transform = 'scale(0.95)';
+          setTimeout(() => rejectBtn.style.transform = '', 200);
+        });
+        const delBtn = document.createElement('button');
+        delBtn.textContent = 'Delete';
+        delBtn.className = 'ghost';
+        delBtn.addEventListener('click', ()=> {
+          if(!confirm('Delete this leave?')) return;
+          leaves = leaves.filter(x => x.id !== l.id);
+          saveData(LEAVE_KEY, leaves);
+          renderLeaves();
+          renderUpcoming();
+          delBtn.style.transform = 'scale(0.95)';
+          setTimeout(() => delBtn.style.transform = '', 200);
+        });
+        actionsTd.appendChild(approveBtn);
+        actionsTd.appendChild(rejectBtn);
+        actionsTd.appendChild(delBtn);
+        leavesTableBody.appendChild(tr);
+      });
+    }
+    function updateLeaveStatus(id, status){
+      const idx = leaves.findIndex(l=>l.id===id);
+      if(idx === -1) return;
+      leaves[idx].status = status;
+      saveData(LEAVE_KEY, leaves);
+      renderLeaves();
+      renderUpcoming();
+    }
+    // Upcoming list (next 7 days) - show leaves that intersect next 7 days
+    function renderUpcoming(){
+      upcomingList.innerHTML = '';
+      const today = new Date();
+      const end = addDays(clearTime(today), 6); // next 7 days inclusive
+      const upcomingLeaves = leaves.filter(l=>{
+        const from = new Date(l.fromISO);
+        const to = new Date(l.toISO);
+        return rangesOverlap(from, to, clearTime(today), end);
+      }).sort((a,b)=> new Date(a.fromISO) - new Date(b.fromISO));
+      upcomingCount.textContent = upcomingLeaves.length;
+      if(!upcomingLeaves.length){
+        upcomingList.innerHTML = '<div class="muted" style="padding:12px; text-align:center; opacity: 0; animation: fadeIn 0.5s ease-out forwards;">No upcoming leaves in the next 7 days.</div>';
+        return;
+      }
+      upcomingLeaves.forEach((l, i)=>{
+        const wrap = document.createElement('div');
+        wrap.className = 'upcoming-item';
+        wrap.style.animationDelay = `${i * 0.1}s`;
+        wrap.innerHTML = `
+          <div class="upcoming-header">
+            <div>
+              <div style="font-weight:600">${escapeHtml(l.name)} <span class="small muted">(${escapeHtml(l.empId)})</span></div>
+            </div>
+            <span class="status ${l.status.toLowerCase()}">${l.status}</span>
+          </div>
+          <div class="upcoming-meta">${escapeHtml(l.type)} • ${escapeHtml(l.from)} → ${escapeHtml(l.to)} • ${l.days} day(s)</div>
+          <div class="small muted" style="margin-top:6px">${escapeHtml(l.reason || '')}</div>
+        `;
+        upcomingList.appendChild(wrap);
+      });
+    }
+    // Utilities: date parsing and formatting
+    function parseDateStr(s){
+      if(!s) return null;
+      // flatpickr returns m/d/Y formatted string
+      const parts = s.split('/');
+      if(parts.length !== 3) return null;
+      const m = parseInt(parts[0],10) - 1;
+      const d = parseInt(parts[1],10);
+      const y = parseInt(parts[2],10);
+      if(isNaN(m)||isNaN(d)||isNaN(y)) return null;
+      return new Date(y, m, d);
+    }
+    function formatDate(d){
+      // mm/dd/yyyy
+      const mm = String(d.getMonth()+1).padStart(2,'0');
+      const dd = String(d.getDate()).padStart(2,'0');
+      const yyyy = d.getFullYear();
+      return `${mm}/${dd}/${yyyy}`;
+    }
+    function toISO(d){
+      return new Date(d.getFullYear(), d.getMonth(), d.getDate()).toISOString();
+    }
+    function clearTime(d){
+      return new Date(d.getFullYear(), d.getMonth(), d.getDate());
+    }
+    function addDays(d, n){
+      const d2 = new Date(d);
+      d2.setDate(d2.getDate() + n);
+      return d2;
+    }
+    function rangesOverlap(aStart, aEnd, bStart, bEnd){
+      return aStart <= bEnd && bStart <= aEnd;
+    }
+    // Count working days excluding Sat(6) & Sun(0)
+    function countWorkingDays(a, b){
+      let start = clearTime(a), end = clearTime(b);
+      if(end < start) return 0;
+      let count = 0;
+      for(let d = new Date(start); d <= end; d.setDate(d.getDate()+1)){
+        const day = d.getDay(); // 0=Sun,6=Sat
+        if(day !== 0 && day !== 6) count++;
+      }
+      return count;
+    }
+    function updateDays(){
+      const from = parseDateStr(fromDateEl.value);
+      const to = parseDateStr(toDateEl.value);
+      if(from && to && to >= from){
+        totalDaysEl.value = countWorkingDays(from, to);
+      }else{
+        totalDaysEl.value = '';
+      }
+    }
+    function clearEntryForm(){
+      // keep selected employee
+      fromDateEl._flatpickr.clear();
+      toDateEl._flatpickr.clear();
+      totalDaysEl.value = '';
+      reasonEl.value = '';
+      leaveTypeEl.selectedIndex = 0;
+      // status defaults to Pending when adding new leave
+    }
+    // Import .xlsx employees
+    function handleEmpFile(e){
+      const f = e.target.files[0];
+      if(!f) return;
+      const reader = new FileReader();
+      reader.onload = function(ev){
+        try{
+          const data = new Uint8Array(ev.target.result);
+          const workbook = XLSX.read(data, {type: 'array'});
+          const firstSheetName = workbook.SheetNames[0];
+          const sheet = workbook.Sheets[firstSheetName];
+          const json = XLSX.utils.sheet_to_json(sheet, {header:1});
+          // Expect header row with Name and SK ID or rows directly with Name, SK ID
+          const parsed = [];
+          for(let r=0;r<json.length;r++){
+            const row = json[r];
+            if(row.length < 2) continue;
+            // If header row contains strings "Name" and "SK ID", skip header
+            if(r===0){
+              const h0 = String(row[0]||'').toLowerCase();
+              const h1 = String(row[1]||'').toLowerCase();
+              if((h0.includes('name') || h0.includes('employee')) && (h1.includes('sk') || h1.includes('id'))) {
+                continue;
+              }
+            }
+            const name = String(row[0]||'').trim();
+            const id = String(row[1]||'').trim();
+            if(!name || !id) continue;
+            parsed.push({ name, id });
+          }
+          // merge into employees, avoid duplicates by id
+          let added = 0;
+          parsed.forEach(p=>{
+            if(!employees.find(e=>e.id===p.id)){
+              employees.push({ name: p.name, id: p.id });
+              added++;
+            }
+          });
+          saveData(EMP_KEY, employees);
+          renderEmployeesSelect();
+          alert('Imported ' + added + ' new employees.');
+        }catch(err){
+          alert('Failed to parse file: ' + err.message);
+        }
+      };
+      reader.readAsArrayBuffer(f);
+      // reset input
+      e.target.value = '';
+    }
+    // CSV download
+    function downloadCSV(rows, filename){
+      if(!rows || !rows.length) { alert('No data'); return; }
+      const keys = Object.keys(rows[0]);
+      const csv = [
+        keys.join(','),
+        ...rows.map(r => keys.map(k => `"${String(r[k]||'').replace(/"/g,'""')}"`).join(','))
+      ].join('\n');
+      const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = filename; document.body.appendChild(a); a.click();
+      setTimeout(()=>{ URL.revokeObjectURL(url); a.remove(); }, 500);
+    }
+    // Small helpers
+    function escapeHtml(s){
+      if(!s) return '';
+      return String(s).replace(/[&<>"']/g, function(m){ return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]); });
+    }
+    // Theme handling
+    function setDarkMode(on){
+      if(on){
+        document.documentElement.classList.add('dark');
+        document.body.classList.add('dark');
+        localStorage.setItem('lt_dark','1');
+      }else{
+        document.documentElement.classList.remove('dark');
+        document.body.classList.remove('dark');
+        localStorage.removeItem('lt_dark');
+      }
+      // Trigger reflow for smooth transition
+      document.body.style.transition = 'none';
+      void document.body.offsetWidth;
+      document.body.style.transition = 'all 0.4s ease';
+    }
+  </script>
+</body>
+</html>
