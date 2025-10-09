@@ -7,12 +7,19 @@ A **modern, single-file web app** for tracking employee leaves, approvals, and u
 ## Features
 
 ✨ **Dark/Light Mode** – Toggle with a smooth transition
+
 📅 **Interactive Dashboard** – Shows upcoming leaves for the next 7 days
+
 📝 **Leave Management** – Add, approve, reject, and delete leaves
+
 📊 **Employee Database** – Import from Excel, export to CSV
+
 📱 **Responsive Design** – Works on mobile and desktop
+
 🎨 **Animations** – Smooth UI transitions and feedback
+
 💾 **Local Storage** – All data persists in the browser
+
 ---
 
 ## How to Use
